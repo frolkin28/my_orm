@@ -40,7 +40,6 @@ class Model(metaclass=Meta):
 		for key, value in kwargs.items():
 			self.__dict__['_' + key] = value
 
-	# done
 	@classmethod
 	def create_table(cls):
 		str_types = ', '.join(['{} {}'.format(i[1:], j) for i, j in cls.types.items()])
@@ -48,7 +47,6 @@ class Model(metaclass=Meta):
 		cls.query.cur.execute(query)
 		cls.query.conn.commit()
 
-	# done
 	def insert(self):
 		tablename = self.__class__.__tablename__
 		fields = ', '.join(key[1:] for key in self.__dict__.keys() if key.startswith('_'))
@@ -57,7 +55,6 @@ class Model(metaclass=Meta):
 							  tuple(value for key, value in self.__dict__.items() if key.startswith('_')))
 		self.__class__.query.conn.commit()
 
-	# done
 	def save(self):
 		tablename = self.__class__.query.tablename
 		query_fields = list((key[1:], value) for key, value in self.__dict__.items() if key.startswith('_') and key != '_pk')
@@ -71,7 +68,6 @@ class Model(metaclass=Meta):
 		self.query.cur.execute('update {} set {} where pk={}'.format(tablename, str_query, self._pk))
 		self.query.conn.commit()
 
-	# done
 	@classmethod
 	def get(cls, pk):
 		fields = tuple(key[1:] for key in cls.types.keys())
@@ -84,22 +80,19 @@ class Model(metaclass=Meta):
 
 	@classmethod
 	def all(cls):
-		pass
+		fields = tuple(key[1:] for key in cls.types.keys())
+		str_fields = ','.join(fields)
+		cls.query.cur.execute('select {} from {}'.format(str_fields, cls.__tablename__))
+		cls.query.conn.commit()
+		result = []
+		for entry in cls.query.cur.fetchall():
+			obj_dict = dict(zip(fields, entry))
+			obj = cls(**obj_dict)
+			result.append(obj)
+		return result
 
-	# done
 	@classmethod
 	def drop_table(cls):
 		cls.query.cur.execute('drop table if exists {}'.format(cls.__tablename__))
 		cls.query.conn.commit()
 		cls.query.conn.close()
-
-
-class MyModel(Model):
-	__tablename__ = 'test'
-	a = IntField()
-	b = CharField()
-	c = FloatField()
-
-
-if __name__ == '__main__':
-	pass
