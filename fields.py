@@ -7,40 +7,45 @@ class Field:
 
 
 class IntField(Field):
-    type = 'integer'
+	type = 'integer'
 
-    def __set__(self, obj, value):
-        if isinstance(value, int):
-            super().__set__(obj, value)
-        else:
-            raise ValueError
+	def __set__(self, obj, value):
+		if isinstance(value, int):
+			super().__set__(obj, value)
+		else:
+			raise ValueError
 
 
 class CharField(Field):
-    type = 'varchar'
+	type = 'varchar'
 
-    def __set__(self, obj, value):
-        if isinstance(value, str) and len(value) < 255:
-            super().__set__(obj, value)
-        else:
-            raise ValueError
+	def __set__(self, obj, value):
+		if isinstance(value, str) and len(value) < 255:
+			super().__set__(obj, value)
+		else:
+			raise ValueError
 
 
 class FloatField(Field):
-    type = 'float'
+	type = 'float'
 
-    def __set__(self, obj, value):
-        if isinstance(value, float):
-            super().__set__(obj, value)
-        else:
-            raise ValueError
+	def __set__(self, obj, value):
+		if isinstance(value, float):
+			super().__set__(obj, value)
+		else:
+			raise ValueError
 
 
 class TextField(Field):
-    type = 'Text'
+	type = 'Text'
 
-    def __set__(self, obj, value):
-        if isinstance(value, str):
-            super().__set__(obj, value)
-        else:
-            raise ValueError
+	def __set__(self, obj, value):
+		if isinstance(value, str):
+			super().__set__(obj, value)
+		else:
+			raise ValueError
+
+
+class PrimaryKey(Field):
+	def __set__(self, obj, value):
+		raise ValueError

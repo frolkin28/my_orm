@@ -1,58 +1,97 @@
-import sys
 import sqlite3
-from fields import IntField, CharField, FloatField, Field, TextField
+from fields import IntField, CharField, FloatField, Field, TextField, PrimaryKey
+
+
+class Query:
+	def __init__(self, tablename):
+		self.conn = sqlite3.connect('database.db')
+		self.cur = self.conn.cursor()
+		self.tablename = tablename
 
 
 class Meta(type):
 	def __new__(cls, name, parents, props):
 		my_types = {}
 		for field_name, field in props.items():
-			if type(field) in [IntField, CharField, FloatField]:
-				field._name = field_name # for each Field object add _name
+			if type(field) in [IntField, CharField, FloatField, PrimaryKey]:
+				field._name = field_name  # for each Field object add _name
 
 				if isinstance(field, IntField):
-					my_types['_'+field_name] = 'integer'
+					my_types['_' + field_name] = 'integer'
 				elif isinstance(field, FloatField):
-					my_types['_'+field_name] = 'float'
+					my_types['_' + field_name] = 'float'
 				elif isinstance(field, CharField):
-					my_types['_'+field_name] = 'varchar(255)'
+					my_types['_' + field_name] = 'varchar(255)'
 				elif isinstance(field, TextField):
-					my_types['_'+field_name] = 'text'
+					my_types['_' + field_name] = 'text'
+
+		my_types['_pk'] = 'integer primary key'
 		props['types'] = my_types
+
+		if '__tablename__' in props.keys():
+			props['query'] = Query(props['__tablename__'])
+
 		return type.__new__(cls, name, parents, props)
 
 
 class Model(metaclass=Meta):
+
 	def __init__(self, *args, **kwargs):
-		self.__dict__['types'] = {}
 		for key, value in kwargs.items():
-			self.__dict__['_'+key] = value
-		self.conn = sqlite3.connect('database.db')
-		self.cur = self.conn.cursor()
+			self.__dict__['_' + key] = value
 
-	def create_table(self):
-		str_types = ', '.join(['{} {}'.format(i[1:], j) for i, j in self.__class__.types.items()])
-		query = 'create table if not exists {} ({})'.format(self.__class__.__tablename__, str_types)
-		self.cur.execute(query)
-		self.conn.commit()
+	# done
+	@classmethod
+	def create_table(cls):
+		str_types = ', '.join(['{} {}'.format(i[1:], j) for i, j in cls.types.items()])
+		query = 'create table if not exists {} ({})'.format(cls.query.tablename, str_types)
+		cls.query.cur.execute(query)
+		cls.query.conn.commit()
 
+	# done
 	def insert(self):
 		tablename = self.__class__.__tablename__
-		self.cur.execute(f'insert into {tablename} values (?, ?, ?)', tuple(value for key, value in m.__dict__.items() if key.startswith('_')))
-		self.conn.commit()
+		fields = ', '.join(key[1:] for key in self.__dict__.keys() if key.startswith('_'))
+		query = f'insert into {tablename}({fields})'
+		self.__class__.query.cur.execute(query + ' values (?, ?, ?)',
+							  tuple(value for key, value in self.__dict__.items() if key.startswith('_')))
+		self.__class__.query.conn.commit()
 
+	# done
 	def save(self):
-		self.cur.execute('')
+		tablename = self.__class__.query.tablename
+		query_fields = list((key[1:], value) for key, value in self.__dict__.items() if key.startswith('_') and key != '_pk')
+		str_fields = []
+		for key, value in query_fields:
+			if isinstance(value, str):
+				str_fields.append("{}='{}'".format(key, value))
+			else:
+				str_fields.append("{}={}".format(key, value))
+		str_query = ', '.join(str_fields)
+		self.query.cur.execute('update {} set {} where pk={}'.format(tablename, str_query, self._pk))
+		self.query.conn.commit()
 
-	def get(self, **kwargs):
-		self.cur.execute('select * from {}'.format(self.__class__.__tablename__))
-		self.conn.commit()
-		return self.cur.fetchall()
+	# done
+	@classmethod
+	def get(cls, pk):
+		fields = tuple(key[1:] for key in cls.types.keys())
+		str_fields = ','.join(fields)
+		cls.query.cur.execute('select {} from {} where pk={}'.format(str_fields, cls.__tablename__, pk))
+		cls.query.conn.commit()
+		result = dict(zip(fields, cls.query.cur.fetchone()))
+		obj = cls(**result)
+		return obj
 
-	def drop_table(self):
-		self.cur.execute('drop table if exists {}'.format(self.__class__.__tablename__))
-		self.conn.commit()
-		self.conn.close()
+	@classmethod
+	def all(cls):
+		pass
+
+	# done
+	@classmethod
+	def drop_table(cls):
+		cls.query.cur.execute('drop table if exists {}'.format(cls.__tablename__))
+		cls.query.conn.commit()
+		cls.query.conn.close()
 
 
 class MyModel(Model):
@@ -63,6 +102,4 @@ class MyModel(Model):
 
 
 if __name__ == '__main__':
-	m = MyModel(a=1, b='aaa', c=3.14)
-	m.a = 10
-	print(m.get())
+	pass
