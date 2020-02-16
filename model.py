@@ -92,7 +92,14 @@ class Model(metaclass=Meta):
 		return result
 
 	@classmethod
+	def delete(cls, obj):
+		cls.query.cur.execute('delete from {} where pk={}'.format(cls.__tablename__, obj._pk))
+		cls.query.conn.commit()
+		return None
+
+	@classmethod
 	def drop_table(cls):
 		cls.query.cur.execute('drop table if exists {}'.format(cls.__tablename__))
 		cls.query.conn.commit()
 		cls.query.conn.close()
+		return None

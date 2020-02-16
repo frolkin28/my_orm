@@ -1,6 +1,7 @@
 from model import Model
 from fields import IntField, CharField, FloatField
 
+
 class MyModel(Model):
 	__tablename__ = 'test'
 	a = IntField()
@@ -9,5 +10,5 @@ class MyModel(Model):
 
 
 if __name__ == '__main__':
-	for i in MyModel.all():
-		print(i.b)
+	m = MyModel.get(1)
+	print(m.a)
