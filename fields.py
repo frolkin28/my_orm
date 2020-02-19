@@ -7,7 +7,15 @@ class Field:
 
 
 class IntField(Field):
-	type = 'integer'
+
+	def __init__(self, primary_key=False, unique=False, default=None):
+		self.params = 'integer '
+		if primary_key:
+			self.params += 'primary key'
+		if unique:
+			self.params += 'unique'
+		if default:
+			self.params += 'default {}'.format(default)
 
 	def __set__(self, obj, value):
 		if isinstance(value, int):
@@ -16,8 +24,12 @@ class IntField(Field):
 			raise ValueError
 
 
-class CharField(Field):
-	type = 'varchar'
+class VarcharField(Field):
+
+	def __init__(self, num_char=None):
+		if not num_char:
+			raise ValueError('Number of characters arent defined')
+		self.params = 'varchar({})'.format(num_char)
 
 	def __set__(self, obj, value):
 		if isinstance(value, str) and len(value) < 255:
@@ -27,7 +39,13 @@ class CharField(Field):
 
 
 class FloatField(Field):
-	type = 'float'
+
+	def __init__(self,  unique=False, default=None):
+		self.params = 'float'
+		if unique:
+			self.params += 'unique'
+		if default:
+			self.params += 'default {}'.format(default)
 
 	def __set__(self, obj, value):
 		if isinstance(value, float):
@@ -37,7 +55,9 @@ class FloatField(Field):
 
 
 class TextField(Field):
-	type = 'Text'
+
+	def __init__(self):
+		self.params = 'text'
 
 	def __set__(self, obj, value):
 		if isinstance(value, str):
@@ -45,7 +65,12 @@ class TextField(Field):
 		else:
 			raise ValueError
 
+class BooleanField(Field):
+	def __init__(self):
+		self.params = 'boolean'
 
-class PrimaryKey(Field):
 	def __set__(self, obj, value):
-		raise ValueError
+		if isinstance(value, float):
+			super().__set__(obj, value)
+		else:
+			raise ValueError
