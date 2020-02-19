@@ -12,9 +12,11 @@ class Query:
 class Meta(type):
 	def __new__(cls, name, parents, props):
 		props['pk'] = IntField(primary_key=True)
+
 		for field_name, field in props.items():
 			if type(field) in [IntField, VarcharField, FloatField, TextField, BooleanField]:
 				field._name = field_name  # for each Field object add _name
+
 		if '__tablename__' in props.keys():
 			props['query'] = Query(props['__tablename__'])
 
